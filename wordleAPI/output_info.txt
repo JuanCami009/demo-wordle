@@ -1,0 +1,1176 @@
+Buscando carpetas con código fuente...
+--------------------------------------------------------------
+
+📁 Carpeta procesada: app
+Estructura completa:
+app
+├── api
+│   ├── __init__.py
+│   ├── __pycache__
+│   │   ├── __init__.cpython-313.pyc
+│   │   └── router.cpython-313.pyc
+│   └── router.py
+├── common
+│   ├── deps.py
+│   ├── __init__.py
+│   └── __pycache__
+│       ├── deps.cpython-313.pyc
+│       └── __init__.cpython-313.pyc
+├── core
+│   ├── config.py
+│   ├── __init__.py
+│   ├── lifespan.py
+│   ├── middleware.py
+│   └── __pycache__
+│       ├── config.cpython-313.pyc
+│       ├── __init__.cpython-313.pyc
+│       ├── lifespan.cpython-313.pyc
+│       └── middleware.cpython-313.pyc
+├── db
+│   ├── base.py
+│   ├── __init__.py
+│   ├── migrations
+│   │   ├── env.py
+│   │   ├── __pycache__
+│   │   │   └── env.cpython-313.pyc
+│   │   ├── README
+│   │   ├── script.py.mako
+│   │   └── versions
+│   │       ├── 8fb888e2bb7a_seed_words.py
+│   │       ├── 9b511966bc26_init_tables.py
+│   │       └── __pycache__
+│   │           ├── 8fb888e2bb7a_seed_words.cpython-313.pyc
+│   │           └── 9b511966bc26_init_tables.cpython-313.pyc
+│   ├── __pycache__
+│   │   ├── base.cpython-313.pyc
+│   │   ├── __init__.cpython-313.pyc
+│   │   └── session.cpython-313.pyc
+│   └── session.py
+├── features
+│   ├── games
+│   │   ├── __init__.py
+│   │   ├── models.py
+│   │   ├── __pycache__
+│   │   │   ├── __init__.cpython-313.pyc
+│   │   │   ├── models.cpython-313.pyc
+│   │   │   ├── repository.cpython-313.pyc
+│   │   │   ├── router.cpython-313.pyc
+│   │   │   ├── schemas.cpython-313.pyc
+│   │   │   └── service.cpython-313.pyc
+│   │   ├── repository.py
+│   │   ├── router.py
+│   │   ├── schemas.py
+│   │   └── service.py
+│   ├── guesses
+│   │   ├── __init__.py
+│   │   ├── models.py
+│   │   ├── __pycache__
+│   │   │   ├── __init__.cpython-313.pyc
+│   │   │   ├── models.cpython-313.pyc
+│   │   │   ├── repository.cpython-313.pyc
+│   │   │   ├── router.cpython-313.pyc
+│   │   │   ├── schemas.cpython-313.pyc
+│   │   │   └── service.cpython-313.pyc
+│   │   ├── repository.py
+│   │   ├── router.py
+│   │   ├── schemas.py
+│   │   └── service.py
+│   ├── __init__.py
+│   ├── __pycache__
+│   │   └── __init__.cpython-313.pyc
+│   └── words
+│       ├── __init__.py
+│       ├── models.py
+│       ├── __pycache__
+│       │   ├── __init__.cpython-313.pyc
+│       │   ├── models.cpython-313.pyc
+│       │   ├── repository.cpython-313.pyc
+│       │   ├── router.cpython-313.pyc
+│       │   ├── schemas.cpython-313.pyc
+│       │   └── service.cpython-313.pyc
+│       ├── repository.py
+│       ├── router.py
+│       ├── schemas.py
+│       └── service.py
+├── __init__.py
+├── main.py
+└── __pycache__
+    ├── __init__.cpython-313.pyc
+    └── main.cpython-313.pyc
+
+22 directories, 72 files
+
+🧾 Archivos de código en app (con contenido):
+
+app/core/__init__.py
+
+
+--------------------------------------------------
+
+
+app/core/config.py
+
+from functools import lru_cache
+from typing import List, Optional
+import json
+
+from pydantic_settings import BaseSettings, SettingsConfigDict
+from pydantic import field_validator, computed_field
+
+
+class Settings(BaseSettings):
+    # --- Base de datos (siempre localhost) ---
+    # Formato SQLAlchemy: dialect+driver://user:password@host:port/dbname
+    # Usamos el driver psycopg (Psycopg 3) para PostgreSQL.
+    DATABASE_URL: str = "postgresql+psycopg://wordle:wordle@localhost:5431/wordle"
+
+    # --- CORS ---
+    ALLOWED_ORIGINS: List[str] = ["http://localhost:5173"]
+
+    # --- Otros ---
+    DEBUG: bool = True
+
+    # Cargar variables desde .env (puedes cambiar el nombre si quieres)
+    model_config = SettingsConfigDict(
+        env_file=".env",
+        case_sensitive=False,
+    )
+
+    @field_validator("ALLOWED_ORIGINS", mode="before")
+    @classmethod
+    def _parse_origins(cls, v):
+        # Acepta lista JSON o CSV en .env
+        if isinstance(v, str):
+            s = v.strip()
+            if s.startswith("["):  # JSON list
+                try:
+                    return json.loads(s)
+                except Exception:
+                    pass
+            return [p.strip() for p in s.split(",") if p.strip()]
+        return v
+
+    @computed_field
+    @property
+    def database_url(self) -> str:
+        return self.DATABASE_URL
+
+
+@lru_cache
+def get_settings() -> Settings:
+    return Settings()
+
+
+settings = get_settings()
+
+--------------------------------------------------
+
+
+app/core/middleware.py
+
+from fastapi import FastAPI
+from fastapi.middleware.cors import CORSMiddleware
+
+def setup_middlewares(app: FastAPI, allowed_origins: list[str]) -> None:
+    app.add_middleware(
+        CORSMiddleware,
+        allow_origins=allowed_origins,
+        allow_credentials=True,
+        allow_methods=["*"],
+        allow_headers=["*"],
+    )
+
+--------------------------------------------------
+
+
+app/core/lifespan.py
+
+from contextlib import asynccontextmanager
+from fastapi import FastAPI
+
+@asynccontextmanager
+async def lifespan(app: FastAPI):
+   
+    yield
+  
+--------------------------------------------------
+
+
+app/db/__init__.py
+
+
+--------------------------------------------------
+
+
+app/db/base.py
+
+from sqlalchemy.orm import DeclarativeBase
+
+class Base(DeclarativeBase):
+    pass
+
+
+
+--------------------------------------------------
+
+
+app/db/session.py
+
+from sqlalchemy import create_engine
+from sqlalchemy.orm import sessionmaker
+from app.core.config import settings
+
+
+engine = create_engine(
+    settings.database_url,
+    pool_pre_ping=True,
+)
+
+SessionLocal = sessionmaker(bind=engine, autoflush=False, autocommit=False)
+
+--------------------------------------------------
+
+
+app/db/migrations/versions/9b511966bc26_init_tables.py
+
+"""init tables
+
+Revision ID: 9b511966bc26
+Revises: 
+Create Date: 2025-09-02 12:31:46.311556
+
+"""
+from typing import Sequence, Union
+
+from alembic import op
+import sqlalchemy as sa
+
+
+# revision identifiers, used by Alembic.
+revision: str = '9b511966bc26'
+down_revision: Union[str, Sequence[str], None] = None
+branch_labels: Union[str, Sequence[str], None] = None
+depends_on: Union[str, Sequence[str], None] = None
+
+
+def upgrade() -> None:
+    """Upgrade schema."""
+    # ### commands auto generated by Alembic - please adjust! ###
+    op.create_table('words',
+    sa.Column('id', sa.Integer(), nullable=False),
+    sa.Column('text', sa.String(length=5), nullable=False),
+    sa.CheckConstraint('char_length(text) = 5', name='ck_words_len_5'),
+    sa.PrimaryKeyConstraint('id')
+    )
+    op.create_index(op.f('ix_words_text'), 'words', ['text'], unique=True)
+    op.create_table('games',
+    sa.Column('id', sa.Integer(), nullable=False),
+    sa.Column('solution_id', sa.Integer(), nullable=False),
+    sa.Column('status', sa.Enum('playing', 'won', 'lost', name='gamestatus'), nullable=False),
+    sa.Column('started_at', sa.DateTime(timezone=True), server_default=sa.text('now()'), nullable=False),
+    sa.Column('finished_at', sa.DateTime(timezone=True), nullable=True),
+    sa.Column('max_attempts', sa.Integer(), nullable=False),
+    sa.ForeignKeyConstraint(['solution_id'], ['words.id'], ),
+    sa.PrimaryKeyConstraint('id')
+    )
+    op.create_index(op.f('ix_games_solution_id'), 'games', ['solution_id'], unique=False)
+    op.create_index(op.f('ix_games_status'), 'games', ['status'], unique=False)
+    op.create_table('guesses',
+    sa.Column('id', sa.Integer(), nullable=False),
+    sa.Column('game_id', sa.Integer(), nullable=False),
+    sa.Column('text', sa.String(length=5), nullable=False),
+    sa.Column('result_mask', sa.String(length=5), nullable=False),
+    sa.Column('created_at', sa.DateTime(timezone=True), server_default=sa.text('now()'), nullable=False),
+    sa.ForeignKeyConstraint(['game_id'], ['games.id'], ),
+    sa.PrimaryKeyConstraint('id')
+    )
+    op.create_index(op.f('ix_guesses_game_id'), 'guesses', ['game_id'], unique=False)
+    # ### end Alembic commands ###
+
+
+def downgrade() -> None:
+    """Downgrade schema."""
+    # ### commands auto generated by Alembic - please adjust! ###
+    op.drop_index(op.f('ix_guesses_game_id'), table_name='guesses')
+    op.drop_table('guesses')
+    op.drop_index(op.f('ix_games_status'), table_name='games')
+    op.drop_index(op.f('ix_games_solution_id'), table_name='games')
+    op.drop_table('games')
+    op.drop_index(op.f('ix_words_text'), table_name='words')
+    op.drop_table('words')
+    # ### end Alembic commands ###
+
+--------------------------------------------------
+
+
+app/db/migrations/versions/8fb888e2bb7a_seed_words.py
+
+"""seed words
+
+Revision ID: 8fb888e2bb7a
+Revises: 9b511966bc26
+Create Date: 2025-09-06 09:11:33.641270
+
+"""
+from typing import Sequence, Union
+
+from alembic import op
+import sqlalchemy as sa
+
+
+# revision identifiers, used by Alembic.
+revision: str = '8fb888e2bb7a'
+down_revision: Union[str, Sequence[str], None] = '9b511966bc26'
+branch_labels: Union[str, Sequence[str], None] = None
+depends_on: Union[str, Sequence[str], None] = None
+
+
+WORDS = (
+    'PERRO','GATOS','CASAS','ARBOL','RATON','LIMON','NIEVE','PLAZA','SALSA','QUESO',
+    'PANES','LECHE','AGUAS','PLAYA','MONTE','CERRO','CAMPO','CIELO','MARCO','ARENA',
+    'VERDE','NEGRO','ROJAS','AMIGO','AMIGA','NOVIO','NOVIA','PADRE','MADRE','HIJOS',
+    'PRIMO','PRIMA','NINOS','LLAVE','VENTA','CALLE','CARRO','AVION','NUBES','RUIDO',
+    'SILLA','PERLA','RADIO','TEXTO','CLAVE','DATOS','RELOJ','PAPEL','PLUMA','LAPIZ',
+    'FRUTA','FLORA','FAUNA','SOLAR','LUNAR','LUCES','BOMBA','COMER','VIVIR','CORRE'
+)
+
+def upgrade():
+    if not WORDS:
+        return
+    values = ",".join(f"('{w}')" for w in WORDS)
+    op.execute(f"""
+        INSERT INTO words (text)
+        VALUES {values}
+        ON CONFLICT (text) DO NOTHING;
+    """)
+
+def downgrade():
+
+    op.execute("""
+        TRUNCATE TABLE
+            guesses,
+            games,
+            words
+        RESTART IDENTITY;
+    """)
+
+
+
+--------------------------------------------------
+
+
+app/db/migrations/env.py
+
+# app/db/migrations/env.py (fragmento)
+from logging.config import fileConfig
+from sqlalchemy import create_engine, pool
+from alembic import context
+
+from app.db.base import Base
+import app.features.words.models   # noqa: F401
+import app.features.games.models   # noqa: F401
+import app.features.guesses.models # noqa: F401
+
+config = context.config
+if config.config_file_name is not None:
+    fileConfig(config.config_file_name)
+
+target_metadata = Base.metadata
+
+def get_url() -> str:
+    from app.core.config import settings
+    return settings.database_url
+
+def run_migrations_offline() -> None:
+    context.configure(
+        url=get_url(),
+        target_metadata=target_metadata,
+        literal_binds=True,
+        dialect_opts={"paramstyle": "named"},
+        compare_type=True,
+    )
+    with context.begin_transaction():
+        context.run_migrations()
+
+def run_migrations_online() -> None:
+    connectable = create_engine(get_url(), poolclass=pool.NullPool)
+    with connectable.connect() as connection:
+        context.configure(connection=connection, target_metadata=target_metadata, compare_type=True)
+        with context.begin_transaction():
+            context.run_migrations()
+
+if context.is_offline_mode():
+    run_migrations_offline()
+else:
+    run_migrations_online()
+
+--------------------------------------------------
+
+
+app/common/__init__.py
+
+
+--------------------------------------------------
+
+
+app/common/deps.py
+
+from typing import Generator
+from app.db.session import SessionLocal
+
+def get_db() -> Generator:
+    db = SessionLocal()
+    try:
+        yield db
+    finally:
+        db.close()
+
+--------------------------------------------------
+
+
+app/features/games/__init__.py
+
+
+--------------------------------------------------
+
+
+app/features/games/models.py
+
+from sqlalchemy.orm import Mapped, mapped_column, relationship
+from sqlalchemy import ForeignKey, DateTime, Integer, Enum, func
+import enum
+
+from app.db.base import Base
+from app.features.words.models import Word  
+
+class GameStatus(str, enum.Enum):
+    playing = "playing"
+    won = "won"
+    lost = "lost"
+
+class Game(Base):
+    __tablename__ = "games"
+
+    id: Mapped[int] = mapped_column(primary_key=True)
+    solution_id: Mapped[int] = mapped_column(ForeignKey("words.id"), index=True)
+    status: Mapped[GameStatus] = mapped_column(Enum(GameStatus), default=GameStatus.playing, index=True)
+    started_at: Mapped["DateTime"] = mapped_column(DateTime(timezone=True), server_default=func.now())
+    finished_at: Mapped["DateTime | None"] = mapped_column(DateTime(timezone=True), nullable=True)
+    max_attempts: Mapped[int] = mapped_column(Integer, default=6)
+
+    solution: Mapped["Word"] = relationship()
+
+--------------------------------------------------
+
+
+app/features/games/schemas.py
+
+from typing import Literal
+from pydantic import BaseModel
+
+class GameCreate(BaseModel):
+    pass
+
+class GameOut(BaseModel):
+    id: int
+    status: Literal["playing", "won", "lost"]
+    attempts_left: int
+    solution_len: int = 5
+
+--------------------------------------------------
+
+
+app/features/games/repository.py
+
+from sqlalchemy.orm import Session
+from sqlalchemy import func
+
+from app.features.words.models import Word
+from .models import Game
+
+def create_game(db: Session) -> Game:
+    solution = db.query(Word).order_by(func.random()).limit(1).one()
+    game = Game(solution_id=solution.id)
+    db.add(game)
+    db.commit()
+    db.refresh(game)
+    return game
+
+def get_game(db: Session, game_id: int) -> Game | None:
+    return db.get(Game, game_id)
+
+def count_guesses(db: Session, game_id: int) -> int:
+    from app.features.guesses.models import Guess
+    return db.query(Guess).filter(Guess.game_id == game_id).count()
+
+--------------------------------------------------
+
+
+app/features/games/service.py
+
+from sqlalchemy.orm import Session
+from .repository import create_game as repo_create, get_game as repo_get, count_guesses
+
+def start_game(db: Session):
+    return repo_create(db)
+
+def get_game_state(db: Session, game_id: int):
+    game = repo_get(db, game_id)
+    if not game:
+        return None
+    attempts_used = count_guesses(db, game_id)
+    return {
+        "id": game.id,
+        "status": game.status.value,
+        "attempts_left": max(game.max_attempts - attempts_used, 0),
+        "solution_len": 5,
+    }
+
+--------------------------------------------------
+
+
+app/features/games/router.py
+
+from fastapi import APIRouter, Depends, HTTPException
+from sqlalchemy.orm import Session
+
+from app.common.deps import get_db
+from .schemas import GameCreate, GameOut
+from .service import start_game, get_game_state
+
+router = APIRouter()
+
+@router.post("", response_model=GameOut, status_code=201)
+def create_game(_: GameCreate | None = None, db: Session = Depends(get_db)):
+    game = start_game(db)
+    return {
+        "id": game.id,
+        "status": game.status.value,
+        "attempts_left": game.max_attempts,
+        "solution_len": 5,
+    }
+
+@router.get("/{game_id}", response_model=GameOut)
+def read_game(game_id: int, db: Session = Depends(get_db)):
+    state = get_game_state(db, game_id)
+    if not state:
+        raise HTTPException(status_code=404, detail="Game not found")
+    return state
+
+--------------------------------------------------
+
+
+app/features/words/__init__.py
+
+
+--------------------------------------------------
+
+
+app/features/words/models.py
+
+from sqlalchemy.orm import Mapped, mapped_column
+from sqlalchemy import String, CheckConstraint
+from app.db.base import Base
+
+class Word(Base):
+    __tablename__ = "words"
+
+    id: Mapped[int] = mapped_column(primary_key=True)
+    text: Mapped[str] = mapped_column(String(5), unique=True, index=True)
+
+    __table_args__ = (
+        CheckConstraint("char_length(text) = 5", name="ck_words_len_5"),
+    )
+
+--------------------------------------------------
+
+
+app/features/words/schemas.py
+
+from typing import Annotated, List
+from pydantic import BaseModel, Field, field_validator
+
+WordText = Annotated[str, Field(min_length=5, max_length=5, pattern=r"^[A-Za-z]{5}$")]
+
+class WordOut(BaseModel):
+    id: int
+    text: str
+
+class BulkUpsertIn(BaseModel):
+    words: List[WordText]
+
+    @field_validator("words", mode="before")
+    @classmethod
+    def normalize_and_dedupe(cls, v):
+        if not isinstance(v, list):
+            raise ValueError("words must be a list")
+        cleaned = []
+        seen = set()
+        for w in v:
+            w2 = str(w).upper()
+            if len(w2) != 5 or not w2.isalpha():
+                raise ValueError(f"invalid word: {w}")
+            if w2 not in seen:
+                seen.add(w2)
+                cleaned.append(w2)
+        return cleaned
+
+class BulkUpsertOut(BaseModel):
+    created: int
+    skipped: int
+    total: int
+    items: List[WordOut]
+
+class ExistsOut(BaseModel):
+    exists: bool
+
+--------------------------------------------------
+
+
+app/features/words/repository.py
+
+from sqlalchemy.orm import Session
+from sqlalchemy import func
+from typing import Iterable, List
+
+from .models import Word
+
+def get_random_word(db: Session) -> Word:
+    return db.query(Word).order_by(func.random()).limit(1).one()
+
+def exists_word(db: Session, text: str) -> bool:
+    return db.query(Word.id).filter(Word.text == text).first() is not None
+
+def list_words(db: Session, q: str | None, limit: int, offset: int) -> List[Word]:
+    query = db.query(Word)
+    if q:
+        query = query.filter(Word.text.ilike(f"%{q.upper()}%"))
+    return query.order_by(Word.text.asc()).offset(offset).limit(limit).all()
+
+def bulk_upsert_words(db: Session, words: Iterable[str]) -> list[Word]:
+
+    existing = {w.text for w in db.query(Word).filter(Word.text.in_(list(words))).all()}
+    to_create = [Word(text=w) for w in words if w not in existing]
+    db.add_all(to_create)
+    db.commit()
+    for w in to_create:
+        db.refresh(w)
+    return to_create
+
+--------------------------------------------------
+
+
+app/features/words/service.py
+
+from sqlalchemy.orm import Session
+from typing import Iterable
+
+from .models import Word
+from . import repository as repo
+
+def pick_solution(db: Session) -> Word:
+    return repo.get_random_word(db)
+
+def ensure_upper_5(text: str) -> str:
+    t = text.upper()
+    if len(t) != 5 or not t.isalpha():
+        raise ValueError("word must be 5 alphabetic chars")
+    return t
+
+def word_exists(db: Session, text: str) -> bool:
+    return repo.exists_word(db, ensure_upper_5(text))
+
+def find_words(db: Session, q: str | None, limit: int = 50, offset: int = 0):
+    if limit > 100:  
+        limit = 100
+    return repo.list_words(db, q, limit, offset)
+
+def bulk_upsert(db: Session, words: Iterable[str]):
+    created = repo.bulk_upsert_words(db, words)
+    return created
+
+--------------------------------------------------
+
+
+app/features/words/router.py
+
+from fastapi import APIRouter, Depends, HTTPException, Query
+from sqlalchemy.orm import Session
+from typing import List
+
+from app.common.deps import get_db
+from .schemas import WordOut, BulkUpsertIn, BulkUpsertOut, ExistsOut
+from .service import pick_solution, bulk_upsert, word_exists, find_words
+
+router = APIRouter()
+
+@router.get("/random", response_model=WordOut)
+def random_word(db: Session = Depends(get_db)):
+
+    w = pick_solution(db)
+    return {"id": w.id, "text": w.text}
+
+@router.get("", response_model=List[WordOut])
+def list_words(
+    q: str | None = Query(default=None, description="Filtro parcial (contiene)"),
+    limit: int = Query(default=50, ge=1, le=100),
+    offset: int = Query(default=0, ge=0),
+    db: Session = Depends(get_db),
+):
+    items = find_words(db, q, limit, offset)
+    return [{"id": w.id, "text": w.text} for w in items]
+
+@router.get("/exists", response_model=ExistsOut)
+def exists(text: str = Query(..., min_length=5, max_length=5), db: Session = Depends(get_db)):
+    try:
+        ok = word_exists(db, text)
+    except ValueError as e:
+        raise HTTPException(status_code=400, detail=str(e))
+    return {"exists": ok}
+
+@router.post("/bulk", response_model=BulkUpsertOut, status_code=201)
+def bulk_add(payload: BulkUpsertIn, db: Session = Depends(get_db)):
+    created = bulk_upsert(db, payload.words)
+    return {
+        "created": len(created),
+        "skipped": len(payload.words) - len(created),
+        "total": len(payload.words),
+        "items": [{"id": w.id, "text": w.text} for w in created],
+    }
+
+--------------------------------------------------
+
+
+app/features/guesses/__init__.py
+
+
+--------------------------------------------------
+
+
+app/features/guesses/models.py
+
+from sqlalchemy.orm import Mapped, mapped_column
+from sqlalchemy import String, Integer, DateTime, ForeignKey, func
+from app.db.base import Base
+
+class Guess(Base):
+    __tablename__ = "guesses"
+
+    id: Mapped[int] = mapped_column(primary_key=True)
+    game_id: Mapped[int] = mapped_column(ForeignKey("games.id"), index=True)
+    text: Mapped[str] = mapped_column(String(5))           
+    result_mask: Mapped[str] = mapped_column(String(5))    
+    created_at: Mapped["DateTime"] = mapped_column(DateTime(timezone=True), server_default=func.now())
+
+--------------------------------------------------
+
+
+app/features/guesses/schemas.py
+
+from typing import Literal, List
+from pydantic import BaseModel, Field
+
+MaskChar = Literal["G","Y","B"]
+
+class GuessIn(BaseModel):
+    text: str = Field(min_length=5, max_length=5, description="Palabra de 5 letras (se normaliza a MAYÚSCULAS)")
+
+class GuessOut(BaseModel):
+    mask: List[MaskChar]
+    attempts_left: int
+    status: Literal["playing","won","lost"]
+
+--------------------------------------------------
+
+
+app/features/guesses/repository.py
+
+from sqlalchemy.orm import Session
+from sqlalchemy import func
+from .models import Guess
+
+def insert_guess(db: Session, game_id: int, text: str, mask: str) -> Guess:
+    g = Guess(game_id=game_id, text=text, result_mask=mask)
+    db.add(g)
+    db.flush()
+    return g
+
+def count_guesses(db: Session, game_id: int) -> int:
+    return db.query(func.count(Guess.id)).filter(Guess.game_id == game_id).scalar() or 0
+
+--------------------------------------------------
+
+
+app/features/guesses/service.py
+
+from sqlalchemy.orm import Session
+from sqlalchemy import func
+from app.features.games.models import Game, GameStatus
+from app.features.words.models import Word
+from .repository import insert_guess, count_guesses
+
+def _evaluate_guess(solution: str, guess: str) -> str:
+   
+    n = len(guess)
+    res = ["B"] * n
+    remaining = {}
+
+    for i in range(n):
+        if guess[i] == solution[i]:
+            res[i] = "G"
+        else:
+            remaining[solution[i]] = remaining.get(solution[i], 0) + 1
+
+    for i in range(n):
+        if res[i] == "G":
+            continue
+        ch = guess[i]
+        cnt = remaining.get(ch, 0)
+        if cnt > 0:
+            res[i] = "Y"
+            remaining[ch] = cnt - 1
+    return "".join(res)
+
+def make_guess(db: Session, game_id: int, guess_text: str):
+    game = db.get(Game, game_id)
+    if not game:
+        return None, 404, "Game not found"
+    if game.status != GameStatus.playing:
+        return None, 409, "Game already finished"
+
+    guess = guess_text.upper()
+    if len(guess) != 5 or not guess.isalpha():
+        return None, 400, "Guess must be a 5-letter word"
+
+    exists = db.query(Word.id).filter(Word.text == guess).first()
+    if not exists:
+        return None, 400, "Invalid word"
+
+    mask = _evaluate_guess(game.solution.text, guess)
+    insert_guess(db, game.id, guess, mask)
+
+    used = count_guesses(db, game.id)
+    attempts_left = max(game.max_attempts - used, 0)
+
+    if guess == game.solution.text:
+        game.status = GameStatus.won
+        game.finished_at = func.now()
+    elif attempts_left <= 0:
+        game.status = GameStatus.lost
+        game.finished_at = func.now()
+
+    db.commit()
+
+    return {
+        "mask": list(mask),
+        "attempts_left": attempts_left,
+        "status": game.status.value,
+    }, 201, None
+
+--------------------------------------------------
+
+
+app/features/guesses/router.py
+
+from fastapi import APIRouter, Depends, HTTPException, Path
+from sqlalchemy.orm import Session
+from app.common.deps import get_db
+from .schemas import GuessIn, GuessOut
+from .service import make_guess
+
+router = APIRouter()
+
+@router.post("/{game_id}", response_model=GuessOut, status_code=201)
+def create_guess(
+    game_id: int = Path(..., ge=1),
+    payload: GuessIn = ...,
+    db: Session = Depends(get_db),
+):
+    data, code, err = make_guess(db, game_id, payload.text)
+    if err:
+        raise HTTPException(status_code=code, detail=err)
+    return data
+
+--------------------------------------------------
+
+
+app/features/__init__.py
+
+
+--------------------------------------------------
+
+
+app/api/__init__.py
+
+
+--------------------------------------------------
+
+
+app/api/router.py
+
+from fastapi import APIRouter
+from app.features.words.router import router as words
+from app.features.games.router import router as games
+from app.features.guesses.router import router as guesses
+
+api = APIRouter(prefix="/api/v1")
+api.include_router(words, prefix="/words", tags=["words"])
+api.include_router(games, prefix="/games", tags=["games"])
+api.include_router(guesses, prefix="/guesses", tags=["guesses"])
+
+--------------------------------------------------
+
+
+app/__init__.py
+
+
+--------------------------------------------------
+
+
+app/main.py
+
+from fastapi import FastAPI
+from app.core.config import settings
+from app.core.middleware import setup_middlewares
+from app.core.lifespan import lifespan
+from app.api.router import api  
+
+app = FastAPI(title="Wordle API", version="0.1.0", lifespan=lifespan)
+
+setup_middlewares(app, allowed_origins=settings.ALLOWED_ORIGINS)
+app.include_router(api)  
+
+--------------------------------------------------
+
+wordleAPI/.env
+
+DEBUG=true
+DATABASE_URL=postgresql+psycopg://wordle:wordle@localhost:5431/wordle
+ALLOWED_ORIGINS=["http://localhost:5173"]
+
+
+--------------------------------------------------
+
+wordleAPI/alembic.ini
+
+# A generic, single database configuration.
+
+[alembic]
+# path to migration scripts.
+# this is typically a path given in POSIX (e.g. forward slashes)
+# format, relative to the token %(here)s which refers to the location of this
+# ini file
+script_location = %(here)s/app/db/migrations
+
+# template used to generate migration file names; The default value is %%(rev)s_%%(slug)s
+# Uncomment the line below if you want the files to be prepended with date and time
+# see https://alembic.sqlalchemy.org/en/latest/tutorial.html#editing-the-ini-file
+# for all available tokens
+# file_template = %%(year)d_%%(month).2d_%%(day).2d_%%(hour).2d%%(minute).2d-%%(rev)s_%%(slug)s
+
+# sys.path path, will be prepended to sys.path if present.
+# defaults to the current working directory.  for multiple paths, the path separator
+# is defined by "path_separator" below.
+prepend_sys_path = .
+
+
+# timezone to use when rendering the date within the migration file
+# as well as the filename.
+# If specified, requires the python>=3.9 or backports.zoneinfo library and tzdata library.
+# Any required deps can installed by adding `alembic[tz]` to the pip requirements
+# string value is passed to ZoneInfo()
+# leave blank for localtime
+# timezone =
+
+# max length of characters to apply to the "slug" field
+# truncate_slug_length = 40
+
+# set to 'true' to run the environment during
+# the 'revision' command, regardless of autogenerate
+# revision_environment = false
+
+# set to 'true' to allow .pyc and .pyo files without
+# a source .py file to be detected as revisions in the
+# versions/ directory
+# sourceless = false
+
+# version location specification; This defaults
+# to <script_location>/versions.  When using multiple version
+# directories, initial revisions must be specified with --version-path.
+# The path separator used here should be the separator specified by "path_separator"
+# below.
+# version_locations = %(here)s/bar:%(here)s/bat:%(here)s/alembic/versions
+
+# path_separator; This indicates what character is used to split lists of file
+# paths, including version_locations and prepend_sys_path within configparser
+# files such as alembic.ini.
+# The default rendered in new alembic.ini files is "os", which uses os.pathsep
+# to provide os-dependent path splitting.
+#
+# Note that in order to support legacy alembic.ini files, this default does NOT
+# take place if path_separator is not present in alembic.ini.  If this
+# option is omitted entirely, fallback logic is as follows:
+#
+# 1. Parsing of the version_locations option falls back to using the legacy
+#    "version_path_separator" key, which if absent then falls back to the legacy
+#    behavior of splitting on spaces and/or commas.
+# 2. Parsing of the prepend_sys_path option falls back to the legacy
+#    behavior of splitting on spaces, commas, or colons.
+#
+# Valid values for path_separator are:
+#
+# path_separator = :
+# path_separator = ;
+# path_separator = space
+# path_separator = newline
+#
+# Use os.pathsep. Default configuration used for new projects.
+path_separator = os
+
+# set to 'true' to search source files recursively
+# in each "version_locations" directory
+# new in Alembic version 1.10
+# recursive_version_locations = false
+
+# the output encoding used when revision files
+# are written from script.py.mako
+# output_encoding = utf-8
+
+# database URL.  This is consumed by the user-maintained env.py script only.
+# other means of configuring database URLs may be customized within the env.py
+# file.
+sqlalchemy.url = driver://user:pass@localhost/dbname
+
+
+[post_write_hooks]
+# post_write_hooks defines scripts or Python functions that are run
+# on newly generated revision scripts.  See the documentation for further
+# detail and examples
+
+# format using "black" - use the console_scripts runner, against the "black" entrypoint
+# hooks = black
+# black.type = console_scripts
+# black.entrypoint = black
+# black.options = -l 79 REVISION_SCRIPT_FILENAME
+
+# lint with attempts to fix using "ruff" - use the module runner, against the "ruff" module
+# hooks = ruff
+# ruff.type = module
+# ruff.module = ruff
+# ruff.options = check --fix REVISION_SCRIPT_FILENAME
+
+# Alternatively, use the exec runner to execute a binary found on your PATH
+# hooks = ruff
+# ruff.type = exec
+# ruff.executable = ruff
+# ruff.options = check --fix REVISION_SCRIPT_FILENAME
+
+# Logging configuration.  This is also consumed by the user-maintained
+# env.py script only.
+[loggers]
+keys = root,sqlalchemy,alembic
+
+[handlers]
+keys = console
+
+[formatters]
+keys = generic
+
+[logger_root]
+level = WARNING
+handlers = console
+qualname =
+
+[logger_sqlalchemy]
+level = WARNING
+handlers =
+qualname = sqlalchemy.engine
+
+[logger_alembic]
+level = INFO
+handlers =
+qualname = alembic
+
+[handler_console]
+class = StreamHandler
+args = (sys.stderr,)
+level = NOTSET
+formatter = generic
+
+[formatter_generic]
+format = %(levelname)-5.5s [%(name)s] %(message)s
+datefmt = %H:%M:%S
+
+
+--------------------------------------------------
+
+wordleAPI/docker-compose.yml
+
+services:
+  db:
+    image: postgres:17
+    container_name: wordle-postgres
+    environment:
+      POSTGRES_USER: wordle
+      POSTGRES_PASSWORD: wordle
+      POSTGRES_DB: wordle
+    ports:
+      - "5431:5432"
+    volumes:
+      - wordle_pgdata:/var/lib/postgresql/data
+volumes:
+  wordle_pgdata:
+
+--------------------------------------------------
+
+wordleAPI/requirements.txt
+
+alembic==1.16.5
+annotated-types==0.7.0
+anyio==4.10.0
+certifi==2025.8.3
+click==8.2.1
+dnspython==2.7.0
+email-validator==2.3.0
+fastapi==0.116.1
+fastapi-cli==0.0.10
+fastapi-cloud-cli==0.1.5
+greenlet==3.2.4
+h11==0.16.0
+httpcore==1.0.9
+httptools==0.6.4
+httpx==0.28.1
+idna==3.10
+Jinja2==3.1.6
+Mako==1.3.10
+markdown-it-py==4.0.0
+MarkupSafe==3.0.2
+mdurl==0.1.2
+psycopg==3.2.9
+pydantic==2.11.7
+pydantic-settings==2.10.1
+pydantic_core==2.33.2
+Pygments==2.19.2
+python-dotenv==1.1.1
+python-multipart==0.0.20
+PyYAML==6.0.2
+rich==14.1.0
+rich-toolkit==0.15.0
+rignore==0.6.4
+sentry-sdk==2.35.2
+shellingham==1.5.4
+sniffio==1.3.1
+SQLAlchemy==2.0.43
+starlette==0.47.3
+typer==0.17.3
+typing-inspection==0.4.1
+typing_extensions==4.15.0
+urllib3==2.5.0
+uvicorn==0.35.0
+uvloop==0.21.0
+watchfiles==1.1.0
+websockets==15.0.1
+
+
+
+
