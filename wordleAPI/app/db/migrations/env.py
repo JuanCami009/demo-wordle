@@ -4,7 +4,6 @@ from sqlalchemy import create_engine, pool
 from alembic import context
 
 from app.db.base import Base
-# IMPORTA LOS MÓDULOS DE MODELOS AQUÍ (efecto lateral: registran tablas)
 import app.features.words.models   # noqa: F401
 import app.features.games.models   # noqa: F401
 import app.features.guesses.models # noqa: F401
@@ -16,8 +15,6 @@ if config.config_file_name is not None:
 target_metadata = Base.metadata
 
 def get_url() -> str:
-    # como ya tienes settings.database_url, úsala si la integraste;
-    # si no, deja la de alembic.ini
     from app.core.config import settings
     return settings.database_url
 

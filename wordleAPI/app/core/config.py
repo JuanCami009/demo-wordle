@@ -10,7 +10,7 @@ class Settings(BaseSettings):
     # --- Base de datos (siempre localhost) ---
     # Formato SQLAlchemy: dialect+driver://user:password@host:port/dbname
     # Usamos el driver psycopg (Psycopg 3) para PostgreSQL.
-    DATABASE_URL: str = "postgresql+psycopg://wordle:wordle@localhost:5432/wordle"
+    DATABASE_URL: str = "postgresql+psycopg://wordle:wordle@localhost:5431/wordle"
 
     # --- CORS ---
     ALLOWED_ORIGINS: List[str] = ["http://localhost:5173"]
@@ -41,7 +41,6 @@ class Settings(BaseSettings):
     @computed_field
     @property
     def database_url(self) -> str:
-        # Alias conveniente si tu código usa settings.database_url
         return self.DATABASE_URL
 
 
