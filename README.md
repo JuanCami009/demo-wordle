@@ -66,12 +66,18 @@ pip install -r requirements.txt
 services:
   db:
     image: postgres:17
+    container_name: wordle-postgres
     environment:
       POSTGRES_USER: wordle
       POSTGRES_PASSWORD: wordle
       POSTGRES_DB: wordle
     ports:
       - "5431:5432"
+    volumes:
+      - wordle_pgdata:/var/lib/postgresql/data
+volumes:
+  wordle_pgdata:
+
 ```
 Levanta la BD:
 ```bash
