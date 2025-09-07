@@ -6,10 +6,10 @@ const styleByState = {
 };
 
 export default function Key({ label, onClick, state = "idle", wide = false, disabled }) {
-  const base =
-    "select-none rounded-md text-sm font-semibold px-3 py-2 transition active:scale-[.98]";
-  const width = wide ? "col-span-2" : "col-span-1";
   const color = styleByState[state] ?? styleByState.idle;
+  const size = wide
+    ? "min-w-[84px] h-11 px-3"
+    : "min-w-[40px] h-11 px-2";
 
   return (
     <button
@@ -17,7 +17,7 @@ export default function Key({ label, onClick, state = "idle", wide = false, disa
       disabled={disabled}
       aria-label={label}
       onClick={onClick}
-      className={`${base} ${width} ${color} disabled:opacity-50`}
+      className={`select-none rounded-md text-sm font-semibold ${size} transition active:scale-[.98] ${color} disabled:opacity-50`}
     >
       {label}
     </button>
