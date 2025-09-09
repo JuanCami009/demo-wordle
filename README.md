@@ -1,3 +1,8 @@
+# Integrantes del grupo
+
+- Juan Camilo Molina Mussen - A00399775
+- Sharik Camila Rueda Lucero - A00399189
+
 # Wordle API — FastAPI | SQLAlchemy | PostgreSQL | Docker
 
 ---
