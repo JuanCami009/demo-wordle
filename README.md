@@ -20,6 +20,11 @@
     - [Sembrar palabras](#sembrar-palabras)
     - [Crear partida](#crear-partida)
     - [Hacer un intento](#hacer-un-intento)
+  - [Frontend — React + Vite + Tailwind](#frontend--react--vite--tailwind)
+    - [Requisitos](#requisitos)
+    - [Estructura básica](#estructura-básica)
+    - [Variables de entorno (Frontend)](#variables-de-entorno-frontend)
+    - [Levantar el frontend](#levantar-el-frontend)
 
 ---
 
@@ -94,6 +99,7 @@ ALLOWED_ORIGINS=["http://localhost:5173"]
 ## Migraciones con Alembic
 Aplicar migraciones:
 ```bash
+cd wordleAPI/
 alembic upgrade head
 ```
 
@@ -143,5 +149,73 @@ curl -X POST "http://127.0.0.1:8000/api/v1/guesses/1"   -H "Content-Type: applic
 >
 > entra a [http://127.0.0.1:8000/docs](http://127.0.0.1:8000/docs).
 > Allí podrás **probar** los endpoints directamente o, desde el botón superior izquierdo, **descargar el JSON de OpenAPI** (`/openapi.json`) e importarlo en Postman para tener la colección lista automáticamente.
+
+¡Perfecto! Vamos a **completar tu guía** con la parte de **frontend (React + Vite + Tailwind)** y la integración con tu API. Te dejo bloques en **Markdown** listos para **copiar/pegar** debajo de lo que ya tienes.
+
+---
+
+## Frontend — React + Vite + Tailwind
+
+### Requisitos
+
+* Node.js 18+ y npm
+* La API corriendo en `http://127.0.0.1:8000` (o la URL que definas)
+
+### Estructura básica
+
+```
+wordle-frontend/
+├─ src/
+│  ├─ components/
+│  │  ├─ Header.jsx
+│  │  ├─ StatusBar.jsx
+│  │  ├─ AttemptsCounter.jsx
+│  │  ├─ Loading.jsx
+│  │  ├─ GameBoard/
+│  │  │  ├─ GameBoard.jsx
+│  │  │  ├─ Row.jsx
+│  │  │  └─ Cell.jsx
+│  │  └─ Keyboard/
+│  │     ├─ Keyboard.jsx
+│  │     └─ Key.jsx
+│  ├─ pages/
+│  │  └─ GamePage.jsx
+│  ├─ routes/
+│  │  └─ routes.jsx (opcional si usas router)
+│  ├─ services/
+│  │  ├─ axiosService.js
+│  │  ├─ gameService.js
+│  │  ├─ wordService.js
+│  │  └─ guessService.js
+│  ├─ index.css
+│  └─ main.jsx
+├─ index.html
+├─ tailwind.config.js
+└─ vite.config.js
+```
+
+---
+
+### Variables de entorno (Frontend)
+
+Crea un archivo `.env` en la raíz del frontend:
+
+```
+VITE_BASE_URL=http://127.0.0.1:8000
+```
+
+---
+
+### Levantar el frontend
+
+```bash
+cd wordle-frontend
+npm install
+npm run dev
+# http://127.0.0.1:5173
+```
+
+> La API debe estar corriendo (ver sección de backend de tu guía). 
+
 
 
