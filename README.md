@@ -1,40 +1,27 @@
 # Wordle API — FastAPI | SQLAlchemy | PostgreSQL | Docker
 
-## Tabla de contenidos
-- [Wordle API — FastAPI | SQLAlchemy | PostgreSQL | Docker](#wordle-api--fastapi--sqlalchemy--postgresql--docker)
-  - [Tabla de contenidos](#tabla-de-contenidos)
-  - [¿Qué es FastAPI?](#qué-es-fastapi)
-  - [¿Por qué usar FastAPI aquí?](#por-qué-usar-fastapi-aquí)
-  - [Stack y arquitectura del proyecto](#stack-y-arquitectura-del-proyecto)
-  - [Requisitos previos](#requisitos-previos)
-  - [Clonar/instalar dependencias](#clonarinstalar-dependencias)
-  - [Base de datos con Docker](#base-de-datos-con-docker)
-  - [Variables de entorno](#variables-de-entorno)
-  - [Migraciones con Alembic](#migraciones-con-alembic)
-  - [Levantar la API](#levantar-la-api)
-  - [Endpoints principales](#endpoints-principales)
-    - [Words](#words)
-    - [Games](#games)
-    - [Guesses](#guesses)
-  - [Probar rápido (cURL o Postman)](#probar-rápido-curl-o-postman)
-    - [Sembrar palabras](#sembrar-palabras)
-    - [Crear partida](#crear-partida)
-    - [Hacer un intento](#hacer-un-intento)
-  - [Frontend — React + Vite + Tailwind](#frontend--react--vite--tailwind)
-    - [Requisitos](#requisitos)
-    - [Estructura básica](#estructura-básica)
-    - [Variables de entorno (Frontend)](#variables-de-entorno-frontend)
-    - [Levantar el frontend](#levantar-el-frontend)
-
 ---
 
 ## ¿Qué es FastAPI?
-FastAPI es un framework moderno para construir APIs en Python, con tipado estático, validación automática y documentación interactiva (OpenAPI).
+
+**FastAPI** es un framework moderno para construir **APIs** en **Python**.Aprovecha **tipos de Python** para validación automatica de datos y genera **documentación interactica**(OpenAPI/Swagger). Esta pensado para trabajar de forma **asincrona** con async/await.
 
 ## ¿Por qué usar FastAPI aquí?
 - Validación con Pydantic
 - Documentación OpenAPI lista
 - Integración con SQLAlchemy y Alembic
+
+## ¿Por qué usar PostgreSQL combinado con FastAPI y SQLAlchemy?
+- **Estabilidad y potencia**: PostgreSQL es robusto, relacional y ampliamente usado en producción.
+- **SQLAlchemy** 2.0: capa ORM madura, tipada y con un excelente ecosistema.
+- **Docker**: facilita levantar la BD y el backend igual en todas las máquinas.
+
+## Configuracióm del entorno de desarrollo
+
+## Requisitos previos
+- Python 3.11+
+- Docker
+- pip / venv
 
 ## Stack y arquitectura del proyecto
 - **FastAPI** 
@@ -53,11 +40,6 @@ app/
 │  └─ guesses/
 └─ main.py
 ```
-
-## Requisitos previos
-- Python 3.11+
-- Docker
-- pip / venv
 
 ## Clonar/instalar dependencias
 ```bash
@@ -140,7 +122,7 @@ curl -X POST "http://127.0.0.1:8000/api/v1/games"   -H "Content-Type: applicatio
 curl -X POST "http://127.0.0.1:8000/api/v1/guesses/1"   -H "Content-Type: application/json"   -d '{"text":"PERRO"}'
 ```
 
-> 💡 **Sugerencia**:
+>**Sugerencia**:
 > Cuando levantes el servidor con
 >
 > ```bash
@@ -149,8 +131,6 @@ curl -X POST "http://127.0.0.1:8000/api/v1/guesses/1"   -H "Content-Type: applic
 >
 > entra a [http://127.0.0.1:8000/docs](http://127.0.0.1:8000/docs).
 > Allí podrás **probar** los endpoints directamente o, desde el botón superior izquierdo, **descargar el JSON de OpenAPI** (`/openapi.json`) e importarlo en Postman para tener la colección lista automáticamente.
-
-¡Perfecto! Vamos a **completar tu guía** con la parte de **frontend (React + Vite + Tailwind)** y la integración con tu API. Te dejo bloques en **Markdown** listos para **copiar/pegar** debajo de lo que ya tienes.
 
 ---
 
